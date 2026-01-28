@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laporan Asesmen Psikologis Profesional</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Library untuk membaca Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <style>
+        :root {
+            --primary-navy: #1e293b;
+            --secondary-slate: #64748b;
+            --accent-green: #10b981;
+            --accent-blue: #3b82f6;
+            --border-light: #e2e8f0;
+            --bg-light: #f8fafc;
+            --text-main: #334155;
+            
+            /* Status Colors */
+            --color-sb: #059669;
+            --color-ksp: #2563eb;
+            --color-berkembang: #d97706;
+            --color-sdg: #ea580c;
+            --color-krg: #dc2626;
+        }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            margin: 0; 
+            padding: 0; 
+            background-color: #cbd5e1; 
+            color: var(--text-main);
+            line-height: 1.6;
+            -webkit-print-color-adjust: exact;
+        }
+
+        /* Control Panel */
+        .control-panel {
+            background: white; 
+            padding: 24px; 
+            margin: 20px auto; 
+            max-width: 850px;
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--border-light);
+        }
+        .control-panel h4 { margin: 0 0 15px 0; color: var(--primary-navy); font-size: 1.1rem; }
+        .control-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .control-group { display: flex; flex-direction: column; gap: 8px; }
+        .checkbox-group { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 5px; }
+        .checkbox-item { 
+            font-size: 0.85rem; 
+            padding: 6px 12px; 
+            background: var(--bg-light); 
+            border: 1px solid var(--border-light);
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+        .checkbox-item:hover { background: #f1f5f9; }
+
+        .data-actions {
+            grid-column: span 2;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px dashed var(--border-light);
+        }
+        .btn-action {
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+        .btn-export { background: #f1f5f9; color: var(--primary-navy); border: 1px solid var(--border-light); }
+        .btn-import { background: var(--accent-green); color: white; border: none; }
+        .btn-excel { background: var(--accent-blue); color: white; border: none; }
+        .btn-action:hover { opacity: 0.9; transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+
+        /* Watermark */
+        #watermark {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-45deg);
+            font-size: 100pt;
+            color: rgba(0, 0, 0, 0.05);
+            font-weight: 900;
+            z-index: -1;
+            pointer-events: none;
+            white-space: nowrap;
+            text-transform: uppercase;
+        }
+
+        /* Buttons */
+        .print-btn { 
+            position: fixed; 
+            bottom: 40px; 
+            right: 40px; 
+            background: var(--primary-navy); 
+            color: white; 
+            border: none; 
+            padding: 16px 32px; 
+            border-radius: 12px; 
+            cursor: pointer; 
+            font-weight: 600;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s;
+        }
+        .print-btn:hover { transform: translateY(-2px); background: #0f172a; }
+
+        /* Document Container */
+        main { 
+            max-width: 210mm; 
+            min-height: 297mm;
+            margin: 40px auto; 
+            padding: 15mm 20mm 25mm 20mm; 
+            background: white; 
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Header Design */
+        header { 
+            display: flex;
+            align-items: center;
+            border-bottom: 3px double var(--primary-navy);
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .logo-area { width: 100px; padding-right: 20px; }
+        .logo-placeholder { 
+            width: 80px; height: 80px; 
+            border: 1px solid var(--border-light);
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 8px; overflow: hidden;
+            background: #fcfcfc;
+        }
+        .header-text { flex-grow: 1; text-align: center; }
+        
+        .header-input-title {
+            width: 100%;
+            border: none;
+            text-align: center;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--primary-navy);
+            letter-spacing: 2px;
+            background: transparent;
+            text-transform: uppercase;
+            font-family: inherit;
+        }
+        .header-input-sub {
+            width: 100%;
+            border: none;
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--secondary-slate);
+            background: transparent;
+            font-family: inherit;
+            margin-top: 5px;
+        }
+        .header-input-title:focus, .header-input-sub:focus {
+            outline: none;
+            background: #f1f5f9;
+        }
+
+        /* Form Styling */
+        .info-grid {
+            display: grid;
+            grid-template-columns: 120px 1fr 120px 1fr;
+            gap: 10px;
+            margin-bottom: 30px;
+            font-size: 0.9rem;
+        }
+        .info-grid label { font-weight: 600; color: var(--secondary-slate); }
+        .info-grid input { border: none; border-bottom: 1px solid #e2e8f0; padding: 2px 5px; color: var(--primary-navy); font-weight: 500; background: transparent; }
+        .info-grid input:focus { outline: none; border-bottom-color: var(--accent-green); background: #f8fafc; }
+
+        section { margin-bottom: 30px; }
+        h2 { 
+            font-size: 1.1rem; 
+            background: #f1f5f9; 
+            padding: 8px 15px; 
+            border-left: 4px solid var(--primary-navy);
+            color: var(--primary-navy);
+            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
+
+        textarea { 
+            width: 100%; 
+            border: 1px solid var(--border-light); 
+            border-radius: 8px; 
+            padding: 12px; 
+            font-family: inherit; 
+            font-size: 0.95rem;
+            min-height: 80px;
+            background: #fafafa;
+            resize: vertical;
+            transition: border 0.2s;
+        }
+        textarea:focus { outline: none; border-color: var(--accent-blue); background: white; }
+
+        .psikogram-table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 0.9rem; }
+        .psikogram-table th { background: #f8fafc; color: var(--secondary-slate); font-weight: 600; text-align: left; padding: 12px; border-bottom: 2px solid var(--border-light); }
+        .psikogram-table td { padding: 12px; border-bottom: 1px solid var(--border-light); vertical-align: top; }
+        
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            background: #f1f5f9;
+            border: 1px solid var(--border-light);
+        }
+        .dot { width: 10px; height: 10px; border-radius: 50%; display: block; transition: background 0.3s; }
+        .dot.sb { background: var(--color-sb); }
+        .dot.ksp { background: var(--color-ksp); }
+        .dot.berkembang { background: var(--color-berkembang); }
+        .dot.sdg { background: var(--color-sdg); }
+        .dot.krg { background: var(--color-krg); }
+
+        select { border: none; background: transparent; font-weight: 600; font-size: 0.85rem; cursor: pointer; color: inherit; }
+
+        .footer-area { margin-top: 40px; page-break-inside: avoid; }
+        .date-line { text-align: right; margin-bottom: 20px; font-weight: 500; }
+        
+        .signature-grid { 
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            gap: 20px; 
+            text-align: center;
+        }
+        .sig-box { 
+            flex: 1;
+            min-width: 220px;
+            display: flex; 
+            flex-direction: column; 
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .sig-box.centered-single { flex: 0 1 100%; max-width: 300px; margin-left: auto; margin-right: auto; }
+        .sig-box.hidden { display: none; }
+        .sig-box .name-input { font-weight: 700; text-decoration: underline; border: none; text-align: center; background: transparent; padding: 5px 0; width: 100%; font-family: inherit; font-size: 0.95rem; }
+        .sig-box .title-input { font-size: 0.8rem; color: var(--secondary-slate); border: none; text-align: center; background: transparent; width: 100%; font-family: inherit; margin-top: 2px; }
+        .sig-box .id-input { font-size: 0.75rem; color: var(--text-main); border: none; text-align: center; background: transparent; width: 100%; font-family: inherit; }
+
+        .ttd-container {
+            width: 160px;
+            height: 80px;
+            border: 1px dashed var(--border-light);
+            margin: 5px 0;
+            position: relative;
+            background: #fcfcfc;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .ttd-canvas { width: 100%; height: 100%; cursor: crosshair; display: none; }
+        .ttd-image { width: 100%; height: 100%; object-fit: contain; display: none; }
+        .ttd-mode-select { font-size: 0.7rem; margin-bottom: 5px; padding: 2px; border-radius: 4px; border: 1px solid var(--border-light); background: white; }
+
+        .print-footer {
+            display: none;
+            position: absolute;
+            bottom: 10mm;
+            left: 20mm;
+            right: 20mm;
+            border-top: 1px solid #cbd5e1;
+            padding-top: 8px;
+            font-size: 0.7rem;
+            color: #64748b;
+        }
+        .footer-content { display: flex; justify-content: space-between; align-items: center; }
+
+        @media print {
+            body { background: white; }
+            .no-print, .control-panel, .print-btn, .ttd-mode-select { display: none !important; }
+            #watermark { display: block !important; }
+            main { 
+                box-shadow: none; 
+                margin: 0; 
+                padding: 10mm 15mm 25mm 15mm; 
+                width: 100%; 
+                max-width: 100%; 
+                border: none;
+                min-height: 270mm;
+            }
+            textarea { border: none !important; background: transparent !important; padding: 0; overflow: visible; height: auto !important; min-height: 20px; }
+            input { border: none !important; }
+            select { appearance: none; -webkit-appearance: none; color: black !important; border: none !important; }
+            .status-pill { border: none; padding: 0; background: transparent; }
+            header { border-bottom: 2px solid #000; }
+            h2 { background: #f1f5f9 !important; -webkit-print-color-adjust: exact; border-left: 4px solid #000; }
+            .ttd-container { border: none; background: transparent; }
+            .print-footer { display: block; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="watermark">Rahasia</div>
+
+<div class="control-panel no-print">
+    <h4>⚙️ Konfigurasi Laporan</h4>
+    <div class="control-grid">
+        <div class="control-group">
+            <label><strong>Logo Instansi:</strong></label>
+            <input type="file" id="upload-logo" accept="image/*" onchange="previewFile()" style="font-size: 0.8rem;">
+            <input type="text" id="url-logo" placeholder="Atau paste URL logo..." oninput="previewUrl()" style="margin-top:5px; font-size: 0.8rem;">
+        </div>
+        <div class="control-group">
+            <label><strong>Otorisasi Tanda Tangan:</strong></label>
+            <div class="checkbox-group">
+                <label class="checkbox-item"><input type="checkbox" id="check-ortu" checked onchange="toggleTTD('box-ortu', this)"> Orang Tua</label>
+                <label class="checkbox-item"><input type="checkbox" id="check-gpk" onchange="toggleTTD('box-gpk', this)"> GPK</label>
+                <label class="checkbox-item"><input type="checkbox" id="check-wali" checked onchange="toggleTTD('box-wali', this)"> Wali/Psikolog</label>
+                <label class="checkbox-item"><input type="checkbox" id="check-kepsek" onchange="toggleTTD('box-kepsek', this)"> Kepala Sekolah</label>
+            </div>
+        </div>
+
+        <div class="data-actions">
+            <button class="btn-action btn-excel" onclick="document.getElementById('import-excel').click()" title="Impor data dari Excel">
+                📊 Impor Excel
+            </button>
+            <input type="file" id="import-excel" accept=".xlsx, .xls, .csv" style="display:none" onchange="importFromExcel(event)">
+
+            <button class="btn-action btn-import" onclick="document.getElementById('import-file').click()" title="Buka file laporan .json">
+                📂 Buka JSON
+            </button>
+            <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
+
+            <button class="btn-action btn-export" onclick="exportData()" title="Simpan data ke file .json">
+                💾 Simpan JSON
+            </button>
+            
+            <button class="btn-action btn-export" style="background: #fee2e2; color: #b91c1c;" onclick="clearAll()" title="Hapus semua inputan">
+                🗑️ Reset
+            </button>
+        </div>
+    </div>
+</div>
+
+<button class="print-btn" onclick="prepareAndPrint()">
+    <span>🖨️ Cetak Laporan Resmi</span>
+</button>
+
+<main id="capture-area">
+    <header>
+        <div class="logo-area">
+            <div class="logo-placeholder">
+                <img id="main-logo" src="https://via.placeholder.com/150?text=LOGO" alt="Logo" style="width:100%; height:100%; object-fit:contain;">
+            </div>
+        </div>
+        <div class="header-text">
+            <input type="text" id="header-main-title" class="header-input-title data-field" value="LAPORAN PERKEMBANGAN INDIVIDUAL">
+            <input type="text" id="header-sub-title" class="header-input-sub data-field" value="HASIL ASESMEN PSIKOLOGIS & OBSERVASI PERILAKU">
+        </div>
+    </header>
+
+    <div class="info-grid">
+        <label>Nama Siswa</label>
+        <input type="text" id="input-nama" class="data-field" placeholder="Nama lengkap..." oninput="syncFooter()">
+        <label>NISN</label>
+        <input type="text" id="input-nisn" class="data-field" placeholder="NISN..." oninput="syncFooter()">
+        <label>Kelas</label>
+        <input type="text" id="input-kelas" class="data-field" placeholder="Kelas..." oninput="syncFooter()">
+        <label>Tahun Ajaran</label>
+        <input type="text" id="input-tahun" class="data-field" value="2025/2026" oninput="syncFooter()">
+    </div>
+
+    <section>
+        <h2>I. Ringkasan Klinis & Observasi Perilaku</h2>
+        <textarea id="field-ringkasan" class="data-field" placeholder="Tuliskan hasil observasi perilaku dan kondisi klinis siswa..."></textarea>
+    </section>
+
+    <section>
+        <h2>II. Profil Aspek Perkembangan</h2>
+        <table class="psikogram-table">
+            <thead>
+                <tr>
+                    <th width="25%">Aspek</th>
+                    <th width="20%">Capaian</th>
+                    <th width="55%">Deskripsi Analisis</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Regulasi Emosi</strong></td>
+                    <td>
+                        <div class="status-pill">
+                            <span class="dot sb" id="dot-d1"></span>
+                            <select id="sel-d1" class="data-field" onchange="updateColor(this, 'dot-d1')">
+                                <option value="sb" selected>Sangat Baik</option>
+                                <option value="ksp">Sesuai Harapan</option>
+                                <option value="berkembang">Berkembang</option>
+                                <option value="sdg">Sedang</option>
+                                <option value="krg">Perlu Perhatian</option>
+                            </select>
+                        </div>
+                    </td>
+                    <td><textarea id="field-d1-desc" class="data-field"></textarea></td>
+                </tr>
+                <tr>
+                    <td><strong>Interaksi Sosial</strong></td>
+                    <td>
+                        <div class="status-pill">
+                            <span class="dot ksp" id="dot-d2"></span>
+                            <select id="sel-d2" class="data-field" onchange="updateColor(this, 'dot-d2')">
+                                <option value="sb">Sangat Baik</option>
+                                <option value="ksp" selected>Sesuai Harapan</option>
+                                <option value="berkembang">Berkembang</option>
+                                <option value="sdg">Sedang</option>
+                                <option value="krg">Perlu Perhatian</option>
+                            </select>
+                        </div>
+                    </td>
+                    <td><textarea id="field-d2-desc" class="data-field"></textarea></td>
+                </tr>
+                <tr>
+                    <td><strong>Fungsi Eksekutif</strong></td>
+                    <td>
+                        <div class="status-pill">
+                            <span class="dot sdg" id="dot-d3"></span>
+                            <select id="sel-d3" class="data-field" onchange="updateColor(this, 'dot-d3')">
+                                <option value="sb">Sangat Baik</option>
+                                <option value="ksp">Sesuai Harapan</option>
+                                <option value="berkembang">Berkembang</option>
+                                <option value="sdg" selected>Sedang</option>
+                                <option value="krg">Perlu Perhatian</option>
+                            </select>
+                        </div>
+                    </td>
+                    <td><textarea id="field-d3-desc" class="data-field"></textarea></td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section>
+        <h2>III. Analisis Dinamika Psikologis</h2>
+        <textarea id="field-analisis" class="data-field" placeholder="Hubungan antar aspek dan dinamika kepribadian..."></textarea>
+    </section>
+
+    <section>
+        <h2>IV. Rekomendasi</h2>
+        <textarea id="field-rekomendasi" class="data-field" placeholder="Saran praktis untuk intervensi selanjutnya..."></textarea>
+    </section>
+
+    <div class="footer-area">
+        <div class="date-line">
+            Klaten, <input type="text" id="input-tgl-cetak" class="data-field" value="28 Januari 2026">
+        </div>
+        
+        <div class="signature-grid" id="sig-container">
+            <!-- Signature Boxes -->
+            <div class="sig-box" id="box-ortu">
+                <span>Mengetahui,</span>
+                <div class="signature-section" data-id="ortu">
+                    <select class="ttd-mode-select no-print" onchange="changeTTDMode('ortu', this.value)">
+                        <option value="none">Tanpa TTD</option>
+                        <option value="upload">Upload</option>
+                        <option value="digital">Digital</option>
+                    </select>
+                    <div class="ttd-container" id="container-ortu">
+                        <canvas id="canvas-ortu" class="ttd-canvas"></canvas>
+                        <img id="img-ortu" class="ttd-image">
+                        <input type="file" id="file-ortu" style="display:none" onchange="handleTTDUpload('ortu', this)">
+                    </div>
+                </div>
+                <input type="text" id="sig-ortu-name" class="name-input data-field" value="( ....................................... )">
+                <input type="text" id="sig-ortu-title" class="title-input data-field" value="Orang Tua / Wali Murid">
+            </div>
+
+            <div class="sig-box hidden" id="box-gpk">
+                <span>Penyusun,</span>
+                <div class="signature-section" data-id="gpk">
+                    <select class="ttd-mode-select no-print" onchange="changeTTDMode('gpk', this.value)">
+                        <option value="none">Tanpa TTD</option>
+                        <option value="upload">Upload</option>
+                        <option value="digital">Digital</option>
+                    </select>
+                    <div class="ttd-container" id="container-gpk">
+                        <canvas id="canvas-gpk" class="ttd-canvas"></canvas>
+                        <img id="img-gpk" class="ttd-image">
+                        <input type="file" id="file-gpk" style="display:none" onchange="handleTTDUpload('gpk', this)">
+                    </div>
+                </div>
+                <input type="text" id="sig-gpk-name" class="name-input data-field" value="Nugroho Adi, S. Psi.">
+                <input type="text" id="sig-gpk-title" class="title-input data-field" value="Guru Pendamping Khusus">
+                <input type="text" id="sig-gpk-id" class="id-input data-field" placeholder="NIP/NIY: ...">
+            </div>
+
+            <div class="sig-box" id="box-wali">
+                <span>Pemeriksa,</span>
+                <div class="signature-section" data-id="wali">
+                    <select class="ttd-mode-select no-print" onchange="changeTTDMode('wali', this.value)">
+                        <option value="none">Tanpa TTD</option>
+                        <option value="upload">Upload</option>
+                        <option value="digital">Digital</option>
+                    </select>
+                    <div class="ttd-container" id="container-wali">
+                        <canvas id="canvas-wali" class="ttd-canvas"></canvas>
+                        <img id="img-wali" class="ttd-image">
+                        <input type="file" id="file-wali" style="display:none" onchange="handleTTDUpload('wali', this)">
+                    </div>
+                </div>
+                <input type="text" id="sig-wali-name" class="name-input data-field" value="Ardianto Wahyu N, M. Pd.">
+                <input type="text" id="sig-wali-title" class="title-input data-field" value="Psikolog / Wali Kelas">
+                <input type="text" id="sig-wali-id" class="id-input data-field" placeholder="NIP/NIY: ...">
+            </div>
+
+            <div class="sig-box hidden" id="box-kepsek">
+                <span>Mengesahkan,</span>
+                <div class="signature-section" data-id="kepsek">
+                    <select class="ttd-mode-select no-print" onchange="changeTTDMode('kepsek', this.value)">
+                        <option value="none">Tanpa TTD</option>
+                        <option value="upload">Upload</option>
+                        <option value="digital">Digital</option>
+                    </select>
+                    <div class="ttd-container" id="container-kepsek">
+                        <canvas id="canvas-kepsek" class="ttd-canvas"></canvas>
+                        <img id="img-kepsek" class="ttd-image">
+                        <input type="file" id="file-kepsek" style="display:none" onchange="handleTTDUpload('kepsek', this)">
+                    </div>
+                </div>
+                <input type="text" id="sig-kepsek-name" class="name-input data-field" value="Nama Kepala Sekolah">
+                <input type="text" id="sig-kepsek-title" class="title-input data-field" value="Kepala Sekolah">
+                <input type="text" id="sig-kepsek-id" class="id-input data-field" placeholder="NIP/NIY: ...">
+            </div>
+        </div>
+    </div>
+
+    <footer class="print-footer">
+        <div class="footer-content">
+            <div>
+                <strong>Laporan Perkembangan</strong> | <span id="footer-nama">-</span> | NISN: <span id="footer-nisn">-</span>
+            </div>
+            <div>Dicetak: <span id="print-timestamp"></span></div>
+        </div>
+    </footer>
+</main>
+
+<script>
+    const canvasStates = {};
+
+    function updateColor(select, dotId) {
+        document.getElementById(dotId).className = 'dot ' + select.value;
+    }
+
+    function toggleTTD(boxId, checkbox) {
+        const box = document.getElementById(boxId);
+        checkbox.checked ? box.classList.remove('hidden') : box.classList.add('hidden');
+        recalculateSignatureLayout();
+    }
+
+    function recalculateSignatureLayout() {
+        const boxes = Array.from(document.querySelectorAll('.sig-box:not(.hidden)'));
+        boxes.forEach(b => b.classList.remove('centered-single'));
+        if (boxes.length === 1) boxes[0].classList.add('centered-single');
+    }
+
+    function syncFooter() {
+        document.getElementById('footer-nama').textContent = document.getElementById('input-nama').value || 'Nama Siswa';
+        document.getElementById('footer-nisn').textContent = document.getElementById('input-nisn').value || '-';
+    }
+
+    function prepareAndPrint() {
+        syncFooter();
+        const now = new Date();
+        document.getElementById('print-timestamp').textContent = now.toLocaleString('id-ID');
+        window.print();
+    }
+
+    function clearAll() {
+        if(confirm("Apakah Anda yakin ingin menghapus semua data inputan?")) {
+            document.querySelectorAll('.data-field').forEach(f => f.value = f.defaultValue || "");
+            document.querySelectorAll('textarea').forEach(t => t.value = "");
+            syncFooter();
+        }
+    }
+
+    // --- LOGIKA EXCEL ---
+    function importFromExcel(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+                if (jsonData.length > 0) {
+                    const row = jsonData[0];
+                    const mapping = {
+                        'input-nama': ['nama', 'lengkap', 'name', 'siswa', 'murid'],
+                        'input-nisn': ['nisn', 'nis', 'induk', 'id'],
+                        'input-kelas': ['kelas', 'class', 'rombel', 'grade']
+                    };
+
+                    for (const [id, keywords] of Object.entries(mapping)) {
+                        const key = Object.keys(row).find(k => keywords.some(kw => k.toLowerCase().includes(kw)));
+                        if (key) document.getElementById(id).value = row[key];
+                    }
+                    syncFooter();
+                    alert('Data Excel berhasil ditarik!');
+                }
+            } catch (err) { alert('Error membaca Excel:
