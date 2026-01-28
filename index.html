@@ -3,630 +3,651 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Laporan Asesmen Psikologis Profesional</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Library untuk membaca Excel -->
+    <title>Sistem Laporan Psikologis - Profesional</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
     <style>
         :root {
-            --primary-navy: #1e293b;
-            --secondary-slate: #64748b;
-            --accent-green: #10b981;
-            --accent-blue: #3b82f6;
-            --border-light: #e2e8f0;
-            --bg-light: #f8fafc;
-            --text-main: #334155;
+            --primary: #1e293b;
+            --accent: #2563eb;
+            --bg-body: #f1f5f9;
+            --bg-card: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #cbd5e1;
             
-            /* Status Colors */
-            --color-sb: #059669;
-            --color-ksp: #2563eb;
-            --color-berkembang: #d97706;
-            --color-sdg: #ea580c;
-            --color-krg: #dc2626;
+            /* Toast Colors */
+            --success: #10b981;
+            --error: #ef4444;
+            --info: #3b82f6;
+            --warning: #f59e0b;
         }
 
-        body { 
-            font-family: 'Inter', sans-serif; 
-            margin: 0; 
-            padding: 0; 
-            background-color: #cbd5e1; 
-            color: var(--text-main);
-            line-height: 1.6;
-            -webkit-print-color-adjust: exact;
-        }
-
-        /* Control Panel */
-        .control-panel {
-            background: white; 
-            padding: 24px; 
-            margin: 20px auto; 
-            max-width: 850px;
-            border-radius: 12px;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-            border: 1px solid var(--border-light);
-        }
-        .control-panel h4 { margin: 0 0 15px 0; color: var(--primary-navy); font-size: 1.1rem; }
-        .control-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .control-group { display: flex; flex-direction: column; gap: 8px; }
-        .checkbox-group { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 5px; }
-        .checkbox-item { 
-            font-size: 0.85rem; 
-            padding: 6px 12px; 
-            background: var(--bg-light); 
-            border: 1px solid var(--border-light);
-            border-radius: 6px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            transition: all 0.2s;
-        }
-        .checkbox-item:hover { background: #f1f5f9; }
-
-        .data-actions {
-            grid-column: span 2;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px dashed var(--border-light);
-        }
-        .btn-action {
-            padding: 10px 18px;
-            border-radius: 8px;
-            font-size: 0.85rem;
-            cursor: pointer;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.2s;
-        }
-        .btn-export { background: #f1f5f9; color: var(--primary-navy); border: 1px solid var(--border-light); }
-        .btn-import { background: var(--accent-green); color: white; border: none; }
-        .btn-excel { background: var(--accent-blue); color: white; border: none; }
-        .btn-action:hover { opacity: 0.9; transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-
-        /* Watermark */
-        #watermark {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) rotate(-45deg);
-            font-size: 100pt;
-            color: rgba(0, 0, 0, 0.05);
-            font-weight: 900;
-            z-index: -1;
-            pointer-events: none;
-            white-space: nowrap;
-            text-transform: uppercase;
-        }
-
-        /* Buttons */
-        .print-btn { 
-            position: fixed; 
-            bottom: 40px; 
-            right: 40px; 
-            background: var(--primary-navy); 
-            color: white; 
-            border: none; 
-            padding: 16px 32px; 
-            border-radius: 12px; 
-            cursor: pointer; 
-            font-weight: 600;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
-            z-index: 100;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            transition: all 0.3s;
-        }
-        .print-btn:hover { transform: translateY(-2px); background: #0f172a; }
-
-        /* Document Container */
-        main { 
-            max-width: 210mm; 
-            min-height: 297mm;
-            margin: 40px auto; 
-            padding: 15mm 20mm 25mm 20mm; 
-            background: white; 
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-            position: relative;
-            overflow: hidden;
-        }
-
-        /* Header Design */
-        header { 
-            display: flex;
-            align-items: center;
-            border-bottom: 3px double var(--primary-navy);
-            padding-bottom: 20px;
-            margin-bottom: 30px;
-        }
-        .logo-area { width: 100px; padding-right: 20px; }
-        .logo-placeholder { 
-            width: 80px; height: 80px; 
-            border: 1px solid var(--border-light);
-            display: flex; align-items: center; justify-content: center;
-            border-radius: 8px; overflow: hidden;
-            background: #fcfcfc;
-        }
-        .header-text { flex-grow: 1; text-align: center; }
+        * { box-sizing: border-box; -webkit-print-color-adjust: exact; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; margin: 0; padding: 0; background-color: var(--bg-body); color: var(--text-main); transition: background 0.3s; }
         
-        .header-input-title {
-            width: 100%;
-            border: none;
-            text-align: center;
-            font-size: 1.4rem;
-            font-weight: 700;
-            color: var(--primary-navy);
-            letter-spacing: 2px;
-            background: transparent;
-            text-transform: uppercase;
-            font-family: inherit;
-        }
-        .header-input-sub {
-            width: 100%;
-            border: none;
-            text-align: center;
-            font-size: 0.9rem;
-            color: var(--secondary-slate);
-            background: transparent;
-            font-family: inherit;
-            margin-top: 5px;
-        }
-        .header-input-title:focus, .header-input-sub:focus {
-            outline: none;
-            background: #f1f5f9;
-        }
+        /* Locked Mode Styling */
+        body.is-locked { background-color: #cbd5e1; }
+        body.is-locked .config-panel { opacity: 0.5; pointer-events: none; filter: grayscale(0.8); }
+        body.is-locked .sig-action-btns, 
+        body.is-locked .sig-controls { display: none !important; }
+        body.is-locked [contenteditable="true"] { pointer-events: none; outline: none; }
+        body.is-locked .sig-canvas { cursor: default; }
+        body.is-locked select, body.is-locked input, body.is-locked textarea { pointer-events: none; background: #f8fafc !important; border-color: transparent !important; }
 
-        /* Form Styling */
-        .info-grid {
-            display: grid;
-            grid-template-columns: 120px 1fr 120px 1fr;
-            gap: 10px;
-            margin-bottom: 30px;
-            font-size: 0.9rem;
-        }
-        .info-grid label { font-weight: 600; color: var(--secondary-slate); }
-        .info-grid input { border: none; border-bottom: 1px solid #e2e8f0; padding: 2px 5px; color: var(--primary-navy); font-weight: 500; background: transparent; }
-        .info-grid input:focus { outline: none; border-bottom-color: var(--accent-green); background: #f8fafc; }
+        /* --- Toast Notification --- */
+        #toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+        .toast { min-width: 250px; padding: 14px 20px; border-radius: 8px; color: white; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); animation: slideIn 0.3s ease forwards; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .toast.success { background: var(--success); }
+        .toast.error { background: var(--error); }
+        .toast.info { background: var(--info); }
 
-        section { margin-bottom: 30px; }
-        h2 { 
-            font-size: 1.1rem; 
-            background: #f1f5f9; 
-            padding: 8px 15px; 
-            border-left: 4px solid var(--primary-navy);
-            color: var(--primary-navy);
-            margin-bottom: 15px;
-            text-transform: uppercase;
-        }
+        /* --- Navigation --- */
+        .admin-nav { background: #ffffff; padding: 10px 20px; border-bottom: 2px solid var(--primary); position: sticky; top: 0; z-index: 1000; display: flex; justify-content: center; gap: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .btn { padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; border: 1px solid var(--border); transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; background: white; color: var(--text-main); }
+        .btn:hover { transform: translateY(-1px); background: #f8fafc; }
+        .btn-primary { background: var(--accent); color: white; border: none; }
+        .btn-danger { color: #dc2626; border-color: #fecaca; }
+        .btn-lock { background: #334155; color: white; border: none; min-width: 160px; justify-content: center; }
+        .btn-lock.active { background: #ef4444; }
 
-        textarea { 
+        /* --- Input Form Panel --- */
+        .config-panel { max-width: 210mm; margin: 20px auto; background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); border: 1px solid var(--border); transition: all 0.3s; }
+        .config-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; }
+        .config-group { display: flex; flex-direction: column; gap: 8px; }
+        .config-group label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
+        .config-input, .config-select { padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-family: inherit; font-size: 14px; outline: none; transition: border-color 0.2s; }
+        .config-input:focus, .config-select:focus { border-color: var(--accent); }
+        .config-title { font-size: 16px; font-weight: 800; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; color: var(--primary); }
+
+        /* --- Document --- */
+        .paper-wrapper { max-width: 210mm; margin: 0 auto 50px auto; }
+        main { background: var(--bg-card); min-height: 297mm; box-shadow: 0 10px 30px rgba(0,0,0,0.05); display: flex; flex-direction: column; border-radius: 4px; overflow: hidden; position: relative; }
+
+        header { background: var(--primary); color: white; padding: 40px 50px; display: flex; align-items: center; gap: 30px; position: relative; }
+        .badge-secret { position: absolute; top: 0; right: 50px; background: #fde047; color: #b91c1c; padding: 10px 25px; font-weight: 900; font-size: 12px; border-radius: 0 0 8px 8px; }
+        
+        .logo-container { width: 80px; height: 80px; background: white; border-radius: 12px; padding: 5px; display: flex; align-items: center; justify-content: center; }
+        .logo-box { max-width: 100%; max-height: 100%; }
+
+        .content-body { padding: 40px 50px; flex: 1; }
+        h2 { font-size: 14px; text-transform: uppercase; border-left: 5px solid var(--accent); padding-left: 15px; margin-bottom: 20px; }
+
+        .student-info { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 30px; }
+        .info-field label { display: block; font-size: 10px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 5px; }
+        .info-field-val { font-weight: 700; font-size: 15px; border-bottom: 1px solid #cbd5e1; min-height: 25px; display: block; }
+
+        /* --- Table --- */
+        .assessment-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+        .assessment-table th { background: #f1f5f9; padding: 12px; font-size: 11px; text-transform: uppercase; border: 1px solid #e2e8f0; text-align: left; }
+        .assessment-table td { padding: 10px; border: 1px solid #e2e8f0; vertical-align: middle; }
+        .score-val { width: 60px; text-align: center; font-weight: 800; border: 1px solid #cbd5e1; border-radius: 4px; padding: 5px; }
+        .progress-bar { width: 100%; height: 6px; background: #e2e8f0; border-radius: 10px; overflow: hidden; margin-top: 8px; }
+        .progress-fill { height: 100%; transition: width 0.5s; }
+        
+        .row-comment-box { 
             width: 100%; 
-            border: 1px solid var(--border-light); 
-            border-radius: 8px; 
-            padding: 12px; 
+            min-height: 40px; 
+            border: 1px solid #e2e8f0; 
+            border-radius: 4px; 
+            padding: 5px 8px; 
+            font-size: 12px; 
             font-family: inherit; 
-            font-size: 0.95rem;
-            min-height: 80px;
-            background: #fafafa;
             resize: vertical;
-            transition: border 0.2s;
         }
-        textarea:focus { outline: none; border-color: var(--accent-blue); background: white; }
 
-        .psikogram-table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 0.9rem; }
-        .psikogram-table th { background: #f8fafc; color: var(--secondary-slate); font-weight: 600; text-align: left; padding: 12px; border-bottom: 2px solid var(--border-light); }
-        .psikogram-table td { padding: 12px; border-bottom: 1px solid var(--border-light); vertical-align: top; }
+        /* --- Textarea styling --- */
+        .custom-textarea { 
+            width: 100%; 
+            min-height: 120px; 
+            border: 1px solid var(--border); 
+            border-radius: 8px; 
+            padding: 15px; 
+            font-family: inherit; 
+            font-size: 14px; 
+            margin-bottom: 25px;
+            resize: vertical;
+        }
+
+        /* --- Multi-Signature Layout --- */
+        .signature-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 30px; margin-top: 40px; }
+        .sig-box { text-align: center; border: 1px dashed transparent; padding: 10px; transition: border 0.3s; position: relative; }
+        .sig-box:hover:not(.locked) { border-color: #e2e8f0; border-radius: 8px; }
+        .sig-box.hidden { display: none !important; }
         
-        .status-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 4px 10px;
-            border-radius: 20px;
-            background: #f1f5f9;
-            border: 1px solid var(--border-light);
-        }
-        .dot { width: 10px; height: 10px; border-radius: 50%; display: block; transition: background 0.3s; }
-        .dot.sb { background: var(--color-sb); }
-        .dot.ksp { background: var(--color-ksp); }
-        .dot.berkembang { background: var(--color-berkembang); }
-        .dot.sdg { background: var(--color-sdg); }
-        .dot.krg { background: var(--color-krg); }
+        .sig-controls { margin-bottom: 10px; display: flex; flex-direction: column; gap: 5px; }
+        .sig-role-display { font-size: 12px; font-weight: 800; text-transform: uppercase; margin-bottom: 5px; display: block; }
 
-        select { border: none; background: transparent; font-weight: 600; font-size: 0.85rem; cursor: pointer; color: inherit; }
-
-        .footer-area { margin-top: 40px; page-break-inside: avoid; }
-        .date-line { text-align: right; margin-bottom: 20px; font-weight: 500; }
+        .sig-capture-area { position: relative; height: 110px; background: #fafafa; border-bottom: 2px solid var(--primary); margin-bottom: 15px; }
+        .sig-canvas { width: 100%; height: 100%; cursor: crosshair; }
+        .sig-upload-preview { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; background: white; pointer-events: none; display: none; }
         
-        .signature-grid { 
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-around;
-            gap: 20px; 
-            text-align: center;
-        }
-        .sig-box { 
-            flex: 1;
-            min-width: 220px;
-            display: flex; 
-            flex-direction: column; 
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        
-        .sig-box.centered-single { flex: 0 1 100%; max-width: 300px; margin-left: auto; margin-right: auto; }
-        .sig-box.hidden { display: none; }
-        .sig-box .name-input { font-weight: 700; text-decoration: underline; border: none; text-align: center; background: transparent; padding: 5px 0; width: 100%; font-family: inherit; font-size: 0.95rem; }
-        .sig-box .title-input { font-size: 0.8rem; color: var(--secondary-slate); border: none; text-align: center; background: transparent; width: 100%; font-family: inherit; margin-top: 2px; }
-        .sig-box .id-input { font-size: 0.75rem; color: var(--text-main); border: none; text-align: center; background: transparent; width: 100%; font-family: inherit; }
+        .sig-action-btns { position: absolute; bottom: 5px; right: 5px; display: flex; gap: 5px; opacity: 0; transition: opacity 0.2s; }
+        .sig-capture-area:hover .sig-action-btns { opacity: 1; }
+        .sig-mini-btn { font-size: 9px; padding: 2px 6px; cursor: pointer; background: white; border: 1px solid #cbd5e1; border-radius: 4px; }
 
-        .ttd-container {
-            width: 160px;
-            height: 80px;
-            border: 1px dashed var(--border-light);
-            margin: 5px 0;
-            position: relative;
-            background: #fcfcfc;
-            border-radius: 4px;
-            overflow: hidden;
-        }
-        .ttd-canvas { width: 100%; height: 100%; cursor: crosshair; display: none; }
-        .ttd-image { width: 100%; height: 100%; object-fit: contain; display: none; }
-        .ttd-mode-select { font-size: 0.7rem; margin-bottom: 5px; padding: 2px; border-radius: 4px; border: 1px solid var(--border-light); background: white; }
+        .sig-name-display { font-weight: 800; font-size: 14px; margin-top: 5px; display: block; }
+        .sig-nip-display { font-size: 11px; color: var(--text-muted); display: block; }
 
-        .print-footer {
-            display: none;
-            position: absolute;
-            bottom: 10mm;
-            left: 20mm;
-            right: 20mm;
-            border-top: 1px solid #cbd5e1;
-            padding-top: 8px;
-            font-size: 0.7rem;
-            color: #64748b;
-        }
-        .footer-content { display: flex; justify-content: space-between; align-items: center; }
+        footer { background: #f8fafc; border-top: 4px solid var(--primary); padding: 20px 50px; display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; }
 
         @media print {
-            body { background: white; }
-            .no-print, .control-panel, .print-btn, .ttd-mode-select { display: none !important; }
-            #watermark { display: block !important; }
-            main { 
-                box-shadow: none; 
-                margin: 0; 
-                padding: 10mm 15mm 25mm 15mm; 
-                width: 100%; 
-                max-width: 100%; 
-                border: none;
-                min-height: 270mm;
-            }
-            textarea { border: none !important; background: transparent !important; padding: 0; overflow: visible; height: auto !important; min-height: 20px; }
-            input { border: none !important; }
-            select { appearance: none; -webkit-appearance: none; color: black !important; border: none !important; }
-            .status-pill { border: none; padding: 0; background: transparent; }
-            header { border-bottom: 2px solid #000; }
-            h2 { background: #f1f5f9 !important; -webkit-print-color-adjust: exact; border-left: 4px solid #000; }
-            .ttd-container { border: none; background: transparent; }
-            .print-footer { display: block; }
+            .admin-nav, .config-panel, .no-print, #toast-container, .sig-action-btns { display: none !important; }
+            .sig-box { border: none !important; }
+            .paper-wrapper { margin: 0; max-width: 100%; }
+            main { box-shadow: none; border-radius: 0; }
+            textarea { border: none !important; padding: 0 !important; overflow: hidden; resize: none; background: transparent !important; }
+            select, input { border: none !important; background: transparent !important; appearance: none; -webkit-appearance: none; }
+            .assessment-table td { padding: 8px; }
+            .row-comment-box { border: none !important; }
         }
     </style>
 </head>
 <body>
 
-<div id="watermark">Rahasia</div>
+<div id="toast-container"></div>
 
-<div class="control-panel no-print">
-    <h4>⚙️ Konfigurasi Laporan</h4>
-    <div class="control-grid">
-        <div class="control-group">
-            <label><strong>Logo Instansi:</strong></label>
-            <input type="file" id="upload-logo" accept="image/*" onchange="previewFile()" style="font-size: 0.8rem;">
-            <input type="text" id="url-logo" placeholder="Atau paste URL logo..." oninput="previewUrl()" style="margin-top:5px; font-size: 0.8rem;">
+<nav class="admin-nav no-print">
+    <button class="btn btn-lock" id="btn-lock" onclick="toggleLock()">🔒 KUNCI DOKUMEN</button>
+    <div style="border-left: 1px solid var(--border); height: 30px; margin: 0 5px;"></div>
+    
+    <button class="btn" onclick="document.getElementById('logo-upload').click()">🖼️ Logo</button>
+    <input type="file" id="logo-upload" hidden accept="image/*" onchange="loadLogo(this)">
+    
+    <button class="btn" onclick="document.getElementById('import-excel').click()">📊 Impor Data</button>
+    <input type="file" id="import-excel" hidden accept=".xlsx, .xls" onchange="handleExcel(this)">
+    
+    <button class="btn" onclick="exportJSON()">💾 Cadangkan</button>
+    
+    <div style="flex-grow: 1"></div>
+    <button class="btn btn-danger" onclick="resetForm()">🗑️ Reset</button>
+    <button class="btn btn-primary" onclick="window.print()">🖨️ CETAK PDF</button>
+</nav>
+
+<!-- Configuration Panel (Top Form) -->
+<div class="config-panel no-print">
+    <div class="config-title">📝 Panel Pengaturan Data Laporan</div>
+    <div class="config-grid">
+        <div class="config-group">
+            <label>Nama Subjek</label>
+            <input type="text" id="cfg-nama" class="config-input save" placeholder="Nama Lengkap..." oninput="syncData()">
         </div>
-        <div class="control-group">
-            <label><strong>Otorisasi Tanda Tangan:</strong></label>
-            <div class="checkbox-group">
-                <label class="checkbox-item"><input type="checkbox" id="check-ortu" checked onchange="toggleTTD('box-ortu', this)"> Orang Tua</label>
-                <label class="checkbox-item"><input type="checkbox" id="check-gpk" onchange="toggleTTD('box-gpk', this)"> GPK</label>
-                <label class="checkbox-item"><input type="checkbox" id="check-wali" checked onchange="toggleTTD('box-wali', this)"> Wali/Psikolog</label>
-                <label class="checkbox-item"><input type="checkbox" id="check-kepsek" onchange="toggleTTD('box-kepsek', this)"> Kepala Sekolah</label>
-            </div>
+        <div class="config-group">
+            <label>NISN / Identitas</label>
+            <input type="text" id="cfg-id" class="config-input save" placeholder="NISN / ID..." oninput="syncData()">
+        </div>
+        <div class="config-group">
+            <label>Unit / Kelas</label>
+            <select id="cfg-kelas" class="config-select save" onchange="syncData()">
+                <option value="">-- Pilih Unit --</option>
+                <option value="SD - Kelas 1">SD - Kelas 1</option>
+                <option value="SD - Kelas 2">SD - Kelas 2</option>
+                <option value="SD - Kelas 3">SD - Kelas 3</option>
+                <option value="SD - Kelas 4">SD - Kelas 4</option>
+                <option value="SD - Kelas 5">SD - Kelas 5</option>
+                <option value="SD - Kelas 6">SD - Kelas 6</option>
+                <option value="SMP - Kelas 7">SMP - Kelas 7</option>
+                <option value="SMP - Kelas 8">SMP - Kelas 8</option>
+                <option value="SMP - Kelas 9">SMP - Kelas 9</option>
+                <option value="SMA - Kelas 10">SMA - Kelas 10</option>
+                <option value="SMA - Kelas 11">SMA - Kelas 11</option>
+                <option value="SMA - Kelas 12">SMA - Kelas 12</option>
+            </select>
+        </div>
+        <div class="config-group">
+            <label>Tanggal Laporan</label>
+            <input type="text" id="cfg-tgl" class="config-input save" value="28 Januari 2026" oninput="syncData()">
         </div>
 
-        <div class="data-actions">
-            <button class="btn-action btn-excel" onclick="document.getElementById('import-excel').click()" title="Impor data dari Excel">
-                📊 Impor Excel
-            </button>
-            <input type="file" id="import-excel" accept=".xlsx, .xls, .csv" style="display:none" onchange="importFromExcel(event)">
-
-            <button class="btn-action btn-import" onclick="document.getElementById('import-file').click()" title="Buka file laporan .json">
-                📂 Buka JSON
-            </button>
-            <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
-
-            <button class="btn-action btn-export" onclick="exportData()" title="Simpan data ke file .json">
-                💾 Simpan JSON
-            </button>
-            
-            <button class="btn-action btn-export" style="background: #fee2e2; color: #b91c1c;" onclick="clearAll()" title="Hapus semua inputan">
-                🗑️ Reset
-            </button>
+        <div class="config-group">
+            <label>Nama Wali Kelas</label>
+            <input type="text" id="cfg-nm-1" class="config-input save" placeholder="Nama Guru..." oninput="syncData()">
+            <input type="text" id="cfg-nip-1" class="config-input save" placeholder="NIP/NIY..." oninput="syncData()">
+        </div>
+        <div class="config-group">
+            <label>Nama Orang Tua</label>
+            <input type="text" id="cfg-nm-2" class="config-input save" placeholder="Nama Wali Murid..." oninput="syncData()">
+        </div>
+        <div class="config-group">
+            <label>Guru Pendamping Khusus (GPK)</label>
+            <input type="text" id="cfg-nm-3" class="config-input save" placeholder="Nama GPK..." oninput="syncData()">
+            <input type="text" id="cfg-nip-3" class="config-input save" placeholder="NIP/NIY..." oninput="syncData()">
+        </div>
+        <div class="config-group">
+            <label>Nama Kepala Sekolah</label>
+            <input type="text" id="cfg-nm-4" class="config-input save" placeholder="Nama Kepala Sekolah..." oninput="syncData()">
+            <input type="text" id="cfg-nip-4" class="config-input save" placeholder="NIP/NIY..." oninput="syncData()">
         </div>
     </div>
 </div>
 
-<button class="print-btn" onclick="prepareAndPrint()">
-    <span>🖨️ Cetak Laporan Resmi</span>
-</button>
-
-<main id="capture-area">
-    <header>
-        <div class="logo-area">
-            <div class="logo-placeholder">
-                <img id="main-logo" src="https://via.placeholder.com/150?text=LOGO" alt="Logo" style="width:100%; height:100%; object-fit:contain;">
+<div class="paper-wrapper">
+    <main>
+        <header>
+            <div class="badge-secret">RAHASIA</div>
+            <div class="logo-container">
+                <img id="logo-img" src="https://via.placeholder.com/150?text=LOGO" class="logo-box">
             </div>
-        </div>
-        <div class="header-text">
-            <input type="text" id="header-main-title" class="header-input-title data-field" value="LAPORAN PERKEMBANGAN INDIVIDUAL">
-            <input type="text" id="header-sub-title" class="header-input-sub data-field" value="HASIL ASESMEN PSIKOLOGIS & OBSERVASI PERILAKU">
-        </div>
-    </header>
+            <div class="header-titles">
+                <h1 contenteditable="true">LAPORAN ASESMEN PSIKOLOGIS</h1>
+                <p contenteditable="true">LEMBAGA PSIKOLOGI & PENDIDIKAN TERPADU</p>
+            </div>
+        </header>
 
-    <div class="info-grid">
-        <label>Nama Siswa</label>
-        <input type="text" id="input-nama" class="data-field" placeholder="Nama lengkap..." oninput="syncFooter()">
-        <label>NISN</label>
-        <input type="text" id="input-nisn" class="data-field" placeholder="NISN..." oninput="syncFooter()">
-        <label>Kelas</label>
-        <input type="text" id="input-kelas" class="data-field" placeholder="Kelas..." oninput="syncFooter()">
-        <label>Tahun Ajaran</label>
-        <input type="text" id="input-tahun" class="data-field" value="2025/2026" oninput="syncFooter()">
-    </div>
+        <div class="content-body">
+            <div class="student-info">
+                <div class="info-field">
+                    <label>Nama Lengkap Subjek</label>
+                    <span class="info-field-val" id="doc-nama"></span>
+                </div>
+                <div class="info-field">
+                    <label>ID / NISN</label>
+                    <span class="info-field-val" id="doc-id"></span>
+                </div>
+                <div class="info-field">
+                    <label>Unit / Kelas</label>
+                    <span class="info-field-val" id="doc-kelas"></span>
+                </div>
+                <div class="info-field">
+                    <label>Tanggal Laporan</label>
+                    <span class="info-field-val" id="doc-tgl"></span>
+                </div>
+            </div>
 
-    <section>
-        <h2>I. Ringkasan Klinis & Observasi Perilaku</h2>
-        <textarea id="field-ringkasan" class="data-field" placeholder="Tuliskan hasil observasi perilaku dan kondisi klinis siswa..."></textarea>
-    </section>
+            <section>
+                <h2>I. Profil Aspek Psikologis</h2>
+                <table class="assessment-table">
+                    <thead>
+                        <tr>
+                            <th>Dimensi Aspek</th>
+                            <th width="120">Skor</th>
+                            <th width="150">Kategori</th>
+                            <th>Keterangan / Analisis Aspek</th>
+                        </tr>
+                    </thead>
+                    <tbody id="aspek-rows"></tbody>
+                </table>
+            </section>
 
-    <section>
-        <h2>II. Profil Aspek Perkembangan</h2>
-        <table class="psikogram-table">
-            <thead>
-                <tr>
-                    <th width="25%">Aspek</th>
-                    <th width="20%">Capaian</th>
-                    <th width="55%">Deskripsi Analisis</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td><strong>Regulasi Emosi</strong></td>
-                    <td>
-                        <div class="status-pill">
-                            <span class="dot sb" id="dot-d1"></span>
-                            <select id="sel-d1" class="data-field" onchange="updateColor(this, 'dot-d1')">
-                                <option value="sb" selected>Sangat Baik</option>
-                                <option value="ksp">Sesuai Harapan</option>
-                                <option value="berkembang">Berkembang</option>
-                                <option value="sdg">Sedang</option>
-                                <option value="krg">Perlu Perhatian</option>
-                            </select>
+            <section>
+                <h2>II. Analisis Dinamika Psikologis</h2>
+                <textarea id="txt-analisis" class="save custom-textarea" placeholder="Tuliskan analisis dinamika psikologis subjek secara mendalam di sini..."></textarea>
+            </section>
+
+            <section>
+                <h2>III. Rekomendasi & Saran</h2>
+                <textarea id="txt-saran" class="save custom-textarea" placeholder="Tuliskan saran tindak lanjut bagi orang tua dan sekolah..."></textarea>
+            </section>
+
+            <div class="signature-grid">
+                <!-- Wali Kelas -->
+                <div class="sig-box" id="sig-box-1">
+                    <div class="sig-controls no-print">
+                        <select class="sig-role-select save" id="role-1" onchange="toggleSig(1)">
+                            <option value="Wali Kelas">Wali Kelas</option>
+                            <option value="Sembunyikan">Sembunyikan</option>
+                        </select>
+                    </div>
+                    <span class="sig-role-display" id="role-label-1">Wali Kelas</span>
+                    <div class="sig-capture-area">
+                        <canvas id="can-1" class="sig-canvas"></canvas>
+                        <img id="img-pre-1" class="sig-upload-preview">
+                        <div class="sig-action-btns">
+                            <button class="sig-mini-btn" onclick="clearSig(1)">Hapus</button>
+                            <button class="sig-mini-btn" onclick="document.getElementById('up-1').click()">Upload</button>
+                            <input type="file" id="up-1" hidden accept="image/*" onchange="uploadSig(this, 1)">
                         </div>
-                    </td>
-                    <td><textarea id="field-d1-desc" class="data-field"></textarea></td>
-                </tr>
-                <tr>
-                    <td><strong>Interaksi Sosial</strong></td>
-                    <td>
-                        <div class="status-pill">
-                            <span class="dot ksp" id="dot-d2"></span>
-                            <select id="sel-d2" class="data-field" onchange="updateColor(this, 'dot-d2')">
-                                <option value="sb">Sangat Baik</option>
-                                <option value="ksp" selected>Sesuai Harapan</option>
-                                <option value="berkembang">Berkembang</option>
-                                <option value="sdg">Sedang</option>
-                                <option value="krg">Perlu Perhatian</option>
-                            </select>
+                    </div>
+                    <span class="sig-name-display" id="doc-nm-1"></span>
+                    <span class="sig-nip-display" id="doc-nip-1"></span>
+                </div>
+
+                <!-- Wali Murid -->
+                <div class="sig-box" id="sig-box-2">
+                    <div class="sig-controls no-print">
+                        <select class="sig-role-select save" id="role-2" onchange="toggleSig(2)">
+                            <option value="Orang Tua / Wali Murid">Wali Murid</option>
+                            <option value="Sembunyikan">Sembunyikan</option>
+                        </select>
+                    </div>
+                    <span class="sig-role-display" id="role-label-2">Wali Murid</span>
+                    <div class="sig-capture-area">
+                        <canvas id="can-2" class="sig-canvas"></canvas>
+                        <img id="img-pre-2" class="sig-upload-preview">
+                        <div class="sig-action-btns">
+                            <button class="sig-mini-btn" onclick="clearSig(2)">Hapus</button>
+                            <button class="sig-mini-btn" onclick="document.getElementById('up-2').click()">Upload</button>
+                            <input type="file" id="up-2" hidden accept="image/*" onchange="uploadSig(this, 2)">
                         </div>
-                    </td>
-                    <td><textarea id="field-d2-desc" class="data-field"></textarea></td>
-                </tr>
-                <tr>
-                    <td><strong>Fungsi Eksekutif</strong></td>
-                    <td>
-                        <div class="status-pill">
-                            <span class="dot sdg" id="dot-d3"></span>
-                            <select id="sel-d3" class="data-field" onchange="updateColor(this, 'dot-d3')">
-                                <option value="sb">Sangat Baik</option>
-                                <option value="ksp">Sesuai Harapan</option>
-                                <option value="berkembang">Berkembang</option>
-                                <option value="sdg" selected>Sedang</option>
-                                <option value="krg">Perlu Perhatian</option>
-                            </select>
+                    </div>
+                    <span class="sig-name-display" id="doc-nm-2"></span>
+                    <span class="sig-nip-display" id="doc-nip-2"></span>
+                </div>
+
+                <!-- GPK -->
+                <div class="sig-box" id="sig-box-3">
+                    <div class="sig-controls no-print">
+                        <select class="sig-role-select save" id="role-3" onchange="toggleSig(3)">
+                            <option value="Guru Pendamping Khusus">GPK</option>
+                            <option value="Psikolog Pemeriksa">Psikolog</option>
+                            <option value="Sembunyikan">Sembunyikan</option>
+                        </select>
+                    </div>
+                    <span class="sig-role-display" id="role-label-3">Guru Pendamping Khusus</span>
+                    <div class="sig-capture-area">
+                        <canvas id="can-3" class="sig-canvas"></canvas>
+                        <img id="img-pre-3" class="sig-upload-preview">
+                        <div class="sig-action-btns">
+                            <button class="sig-mini-btn" onclick="clearSig(3)">Hapus</button>
+                            <button class="sig-mini-btn" onclick="document.getElementById('up-3').click()">Upload</button>
+                            <input type="file" id="up-3" hidden accept="image/*" onchange="uploadSig(this, 3)">
                         </div>
-                    </td>
-                    <td><textarea id="field-d3-desc" class="data-field"></textarea></td>
-                </tr>
-            </tbody>
-        </table>
-    </section>
-
-    <section>
-        <h2>III. Analisis Dinamika Psikologis</h2>
-        <textarea id="field-analisis" class="data-field" placeholder="Hubungan antar aspek dan dinamika kepribadian..."></textarea>
-    </section>
-
-    <section>
-        <h2>IV. Rekomendasi</h2>
-        <textarea id="field-rekomendasi" class="data-field" placeholder="Saran praktis untuk intervensi selanjutnya..."></textarea>
-    </section>
-
-    <div class="footer-area">
-        <div class="date-line">
-            Klaten, <input type="text" id="input-tgl-cetak" class="data-field" value="28 Januari 2026">
-        </div>
-        
-        <div class="signature-grid" id="sig-container">
-            <!-- Signature Boxes -->
-            <div class="sig-box" id="box-ortu">
-                <span>Mengetahui,</span>
-                <div class="signature-section" data-id="ortu">
-                    <select class="ttd-mode-select no-print" onchange="changeTTDMode('ortu', this.value)">
-                        <option value="none">Tanpa TTD</option>
-                        <option value="upload">Upload</option>
-                        <option value="digital">Digital</option>
-                    </select>
-                    <div class="ttd-container" id="container-ortu">
-                        <canvas id="canvas-ortu" class="ttd-canvas"></canvas>
-                        <img id="img-ortu" class="ttd-image">
-                        <input type="file" id="file-ortu" style="display:none" onchange="handleTTDUpload('ortu', this)">
                     </div>
+                    <span class="sig-name-display" id="doc-nm-3"></span>
+                    <span class="sig-nip-display" id="doc-nip-3"></span>
                 </div>
-                <input type="text" id="sig-ortu-name" class="name-input data-field" value="( ....................................... )">
-                <input type="text" id="sig-ortu-title" class="title-input data-field" value="Orang Tua / Wali Murid">
-            </div>
 
-            <div class="sig-box hidden" id="box-gpk">
-                <span>Penyusun,</span>
-                <div class="signature-section" data-id="gpk">
-                    <select class="ttd-mode-select no-print" onchange="changeTTDMode('gpk', this.value)">
-                        <option value="none">Tanpa TTD</option>
-                        <option value="upload">Upload</option>
-                        <option value="digital">Digital</option>
-                    </select>
-                    <div class="ttd-container" id="container-gpk">
-                        <canvas id="canvas-gpk" class="ttd-canvas"></canvas>
-                        <img id="img-gpk" class="ttd-image">
-                        <input type="file" id="file-gpk" style="display:none" onchange="handleTTDUpload('gpk', this)">
+                <!-- Kepala Sekolah -->
+                <div class="sig-box" id="sig-box-4">
+                    <div class="sig-controls no-print">
+                        <select class="sig-role-select save" id="role-4" onchange="toggleSig(4)">
+                            <option value="Kepala Sekolah">Kepala Sekolah</option>
+                            <option value="Sembunyikan">Sembunyikan</option>
+                        </select>
                     </div>
-                </div>
-                <input type="text" id="sig-gpk-name" class="name-input data-field" value="Nugroho Adi, S. Psi.">
-                <input type="text" id="sig-gpk-title" class="title-input data-field" value="Guru Pendamping Khusus">
-                <input type="text" id="sig-gpk-id" class="id-input data-field" placeholder="NIP/NIY: ...">
-            </div>
-
-            <div class="sig-box" id="box-wali">
-                <span>Pemeriksa,</span>
-                <div class="signature-section" data-id="wali">
-                    <select class="ttd-mode-select no-print" onchange="changeTTDMode('wali', this.value)">
-                        <option value="none">Tanpa TTD</option>
-                        <option value="upload">Upload</option>
-                        <option value="digital">Digital</option>
-                    </select>
-                    <div class="ttd-container" id="container-wali">
-                        <canvas id="canvas-wali" class="ttd-canvas"></canvas>
-                        <img id="img-wali" class="ttd-image">
-                        <input type="file" id="file-wali" style="display:none" onchange="handleTTDUpload('wali', this)">
+                    <span class="sig-role-display" id="role-label-4">Kepala Sekolah</span>
+                    <div class="sig-capture-area">
+                        <canvas id="can-4" class="sig-canvas"></canvas>
+                        <img id="img-pre-4" class="sig-upload-preview">
+                        <div class="sig-action-btns">
+                            <button class="sig-mini-btn" onclick="clearSig(4)">Hapus</button>
+                            <button class="sig-mini-btn" onclick="document.getElementById('up-4').click()">Upload</button>
+                            <input type="file" id="up-4" hidden accept="image/*" onchange="uploadSig(this, 4)">
+                        </div>
                     </div>
+                    <span class="sig-name-display" id="doc-nm-4"></span>
+                    <span class="sig-nip-display" id="doc-nip-4"></span>
                 </div>
-                <input type="text" id="sig-wali-name" class="name-input data-field" value="Ardianto Wahyu N, M. Pd.">
-                <input type="text" id="sig-wali-title" class="title-input data-field" value="Psikolog / Wali Kelas">
-                <input type="text" id="sig-wali-id" class="id-input data-field" placeholder="NIP/NIY: ...">
-            </div>
-
-            <div class="sig-box hidden" id="box-kepsek">
-                <span>Mengesahkan,</span>
-                <div class="signature-section" data-id="kepsek">
-                    <select class="ttd-mode-select no-print" onchange="changeTTDMode('kepsek', this.value)">
-                        <option value="none">Tanpa TTD</option>
-                        <option value="upload">Upload</option>
-                        <option value="digital">Digital</option>
-                    </select>
-                    <div class="ttd-container" id="container-kepsek">
-                        <canvas id="canvas-kepsek" class="ttd-canvas"></canvas>
-                        <img id="img-kepsek" class="ttd-image">
-                        <input type="file" id="file-kepsek" style="display:none" onchange="handleTTDUpload('kepsek', this)">
-                    </div>
-                </div>
-                <input type="text" id="sig-kepsek-name" class="name-input data-field" value="Nama Kepala Sekolah">
-                <input type="text" id="sig-kepsek-title" class="title-input data-field" value="Kepala Sekolah">
-                <input type="text" id="sig-kepsek-id" class="id-input data-field" placeholder="NIP/NIY: ...">
             </div>
         </div>
-    </div>
 
-    <footer class="print-footer">
-        <div class="footer-content">
-            <div>
-                <strong>Laporan Perkembangan</strong> | <span id="footer-nama">-</span> | NISN: <span id="footer-nisn">-</span>
-            </div>
-            <div>Dicetak: <span id="print-timestamp"></span></div>
-        </div>
-    </footer>
-</main>
+        <footer>
+            <div>Subjek: <span id="f-nama">-</span></div>
+            <div>Identitas: <span id="f-id">-</span></div>
+            <div>Dokumen Resmi Institusi</div>
+        </footer>
+    </main>
+</div>
 
 <script>
-    const canvasStates = {};
+    const ASPEK = [
+        "Potensi Intelektual", "Kematangan Emosi", "Motivasi Belajar", 
+        "Interaksi Sosial", "Kemampuan Adaptasi", "Konsentrasi"
+    ];
 
-    function updateColor(select, dotId) {
-        document.getElementById(dotId).className = 'dot ' + select.value;
+    let isLocked = false;
+
+    function showToast(msg, type = 'success') {
+        const c = document.getElementById('toast-container');
+        const t = document.createElement('div');
+        t.className = `toast ${type}`;
+        t.innerHTML = `${type==='error'?'❌':'✔️'} ${msg}`;
+        c.appendChild(t);
+        setTimeout(() => { t.style.opacity = '0'; setTimeout(()=>t.remove(), 300); }, 3000);
     }
 
-    function toggleTTD(boxId, checkbox) {
-        const box = document.getElementById(boxId);
-        checkbox.checked ? box.classList.remove('hidden') : box.classList.add('hidden');
-        recalculateSignatureLayout();
+    function toggleLock() {
+        isLocked = !isLocked;
+        applyLockState();
+        autoSave();
+        showToast(isLocked ? "Dokumen Terkunci" : "Dokumen Dibuka", isLocked ? "info" : "success");
     }
 
-    function recalculateSignatureLayout() {
-        const boxes = Array.from(document.querySelectorAll('.sig-box:not(.hidden)'));
-        boxes.forEach(b => b.classList.remove('centered-single'));
-        if (boxes.length === 1) boxes[0].classList.add('centered-single');
+    function applyLockState() {
+        const btn = document.getElementById('btn-lock');
+        if(isLocked) {
+            document.body.classList.add('is-locked');
+            btn.classList.add('active');
+            btn.innerHTML = "🔓 BUKA KUNCI";
+        } else {
+            document.body.classList.remove('is-locked');
+            btn.classList.remove('active');
+            btn.innerHTML = "🔒 KUNCI DOKUMEN";
+        }
+        
+        document.querySelectorAll('input, select, textarea').forEach(el => {
+            if(el.id !== 'btn-lock') el.disabled = isLocked;
+        });
     }
 
-    function syncFooter() {
-        document.getElementById('footer-nama').textContent = document.getElementById('input-nama').value || 'Nama Siswa';
-        document.getElementById('footer-nisn').textContent = document.getElementById('input-nisn').value || '-';
+    function syncData() {
+        document.getElementById('doc-nama').innerText = document.getElementById('cfg-nama').value;
+        document.getElementById('doc-id').innerText = document.getElementById('cfg-id').value;
+        document.getElementById('doc-kelas').innerText = document.getElementById('cfg-kelas').value;
+        document.getElementById('doc-tgl').innerText = document.getElementById('cfg-tgl').value;
+        
+        for(let i=1; i<=4; i++) {
+            const nmInput = document.getElementById('cfg-nm-' + i);
+            const nipInput = document.getElementById('cfg-nip-' + i);
+            if(nmInput) document.getElementById('doc-nm-' + i).innerText = nmInput.value || (i===2 ? '(Nama Wali Murid)' : '');
+            if(nipInput) document.getElementById('doc-nip-' + i).innerText = nipInput.value ? 'NIP/NIY. ' + nipInput.value : '';
+        }
+
+        document.getElementById('f-nama').innerText = document.getElementById('cfg-nama').value || '-';
+        document.getElementById('f-id').innerText = document.getElementById('cfg-id').value || '-';
+        
+        autoSave();
     }
 
-    function prepareAndPrint() {
-        syncFooter();
-        const now = new Date();
-        document.getElementById('print-timestamp').textContent = now.toLocaleString('id-ID');
-        window.print();
+    function init() {
+        const container = document.getElementById('aspek-rows');
+        ASPEK.forEach((a, i) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><strong>${a}</strong></td>
+                <td>
+                    <input type="number" id="sc-${i}" class="save score-val" value="75" oninput="updateBar(${i})">
+                    <div class="progress-bar"><div id="bar-${i}" class="progress-fill"></div></div>
+                </td>
+                <td>
+                    <select id="sel-${i}" class="save config-select" style="width:100%" onchange="autoSave()">
+                        <option value="Sangat Tinggi">Sangat Tinggi</option>
+                        <option value="Tinggi">Tinggi</option>
+                        <option value="Rata-rata" selected>Rata-rata</option>
+                        <option value="Kurang">Kurang</option>
+                        <option value="Sangat Kurang">Sangat Kurang</option>
+                    </select>
+                </td>
+                <td>
+                    <textarea id="comm-${i}" class="save row-comment-box" placeholder="Analisis aspek..." oninput="autoSave()"></textarea>
+                </td>
+            `;
+            container.appendChild(tr);
+            updateBar(i);
+        });
+        [1,2,3,4].forEach(setupCanvas);
+        loadData();
+        syncData();
+        applyLockState();
     }
 
-    function clearAll() {
-        if(confirm("Apakah Anda yakin ingin menghapus semua data inputan?")) {
-            document.querySelectorAll('.data-field').forEach(f => f.value = f.defaultValue || "");
-            document.querySelectorAll('textarea').forEach(t => t.value = "");
-            syncFooter();
+    function updateBar(i) {
+        const val = document.getElementById('sc-' + i).value;
+        const bar = document.getElementById('bar-' + i);
+        bar.style.width = Math.min(val, 100) + '%';
+        bar.style.backgroundColor = val >= 80 ? '#10b981' : (val >= 60 ? '#2563eb' : '#f59e0b');
+        autoSave();
+    }
+
+    function toggleSig(id) {
+        const val = document.getElementById('role-' + id).value;
+        const box = document.getElementById('sig-box-' + id);
+        const label = document.getElementById('role-label-' + id);
+        
+        if(val === 'Sembunyikan') {
+            box.classList.add('hidden');
+        } else {
+            box.classList.remove('hidden');
+            label.innerText = val;
+        }
+        autoSave();
+    }
+
+    function setupCanvas(id) {
+        const canvas = document.getElementById('can-' + id);
+        const ctx = canvas.getContext('2d');
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+        let drawing = false;
+        ctx.strokeStyle = "#1e293b"; ctx.lineWidth = 2; ctx.lineCap = "round";
+
+        const getPos = (e) => {
+            const r = canvas.getBoundingClientRect();
+            return { x: (e.clientX || e.touches[0].clientX) - r.left, y: (e.clientY || e.touches[0].clientY) - r.top };
+        };
+
+        canvas.onmousedown = canvas.ontouchstart = (e) => {
+            if(isLocked || document.getElementById('img-pre-' + id).style.display === 'block') return;
+            drawing = true;
+            ctx.beginPath();
+            const p = getPos(e);
+            ctx.moveTo(p.x, p.y);
+        };
+
+        canvas.onmousemove = canvas.ontouchmove = (e) => {
+            if(!drawing || isLocked) return;
+            if(e.touches) e.preventDefault();
+            const p = getPos(e);
+            ctx.lineTo(p.x, p.y);
+            ctx.stroke();
+        };
+
+        canvas.onmouseup = canvas.ontouchend = () => { if(drawing) { drawing = false; autoSave(); } };
+    }
+
+    function clearSig(id) {
+        if(isLocked) return;
+        const canvas = document.getElementById('can-' + id);
+        canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+        document.getElementById('img-pre-' + id).style.display = 'none';
+        autoSave();
+    }
+
+    function uploadSig(input, id) {
+        if(isLocked) return;
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = document.getElementById('img-pre-' + id);
+                img.src = e.target.result;
+                img.style.display = 'block';
+                autoSave();
+            };
+            reader.readAsDataURL(input.files[0]);
         }
     }
 
-    // --- LOGIKA EXCEL ---
-    function importFromExcel(event) {
-        const file = event.target.files[0];
-        if (!file) return;
+    function loadLogo(input) {
+        if(isLocked) return;
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                document.getElementById('logo-img').src = e.target.result;
+                showToast("Logo diperbarui");
+                autoSave();
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
 
+    function autoSave() {
+        const data = { isLocked: isLocked };
+        document.querySelectorAll('.save').forEach(el => data[el.id] = el.value);
+        [1,2,3,4].forEach(id => {
+            const canvas = document.getElementById('can-' + id);
+            const img = document.getElementById('img-pre-' + id);
+            data['sig-c-' + id] = canvas.toDataURL();
+            data['sig-i-' + id] = img.style.display === 'block' ? img.src : '';
+        });
+        data['logo_data'] = document.getElementById('logo-img').src;
+        localStorage.setItem('psi_v5_config', JSON.stringify(data));
+    }
+
+    function loadData() {
+        const saved = localStorage.getItem('psi_v5_config');
+        if(!saved) return;
+        const data = JSON.parse(saved);
+        isLocked = data.isLocked || false;
+
+        if(data['logo_data']) document.getElementById('logo-img').src = data['logo_data'];
+
+        for(let k in data) {
+            const el = document.getElementById(k);
+            if(el) {
+                el.value = data[k];
+                if(k.startsWith('sc-')) updateBar(k.split('-')[1]);
+                if(k.startsWith('role-')) toggleSig(k.split('-')[1]);
+            }
+            if(k.startsWith('sig-c-')) {
+                const id = k.split('-')[2];
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.getElementById('can-' + id);
+                    if(canvas) canvas.getContext('2d').drawImage(img, 0, 0);
+                };
+                img.src = data[k];
+            }
+            if(k.startsWith('sig-i-') && data[k]) {
+                const id = k.split('-')[2];
+                const img = document.getElementById('img-pre-' + id);
+                if(img) {
+                    img.src = data[k];
+                    img.style.display = 'block';
+                }
+            }
+        }
+    }
+
+    function handleExcel(input) {
+        if(isLocked) return;
         const reader = new FileReader();
         reader.onload = (e) => {
             try {
-                const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, { type: 'array' });
-                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-                const jsonData = XLSX.utils.sheet_to_json(worksheet);
-
-                if (jsonData.length > 0) {
-                    const row = jsonData[0];
-                    const mapping = {
-                        'input-nama': ['nama', 'lengkap', 'name', 'siswa', 'murid'],
-                        'input-nisn': ['nisn', 'nis', 'induk', 'id'],
-                        'input-kelas': ['kelas', 'class', 'rombel', 'grade']
-                    };
-
-                    for (const [id, keywords] of Object.entries(mapping)) {
-                        const key = Object.keys(row).find(k => keywords.some(kw => k.toLowerCase().includes(kw)));
-                        if (key) document.getElementById(id).value = row[key];
-                    }
-                    syncFooter();
-                    alert('Data Excel berhasil ditarik!');
+                const wb = XLSX.read(new Uint8Array(e.target.result), {type: 'array'});
+                const row = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]])[0];
+                if(row) {
+                    if(row.Nama) document.getElementById('cfg-nama').value = row.Nama;
+                    if(row.ID || row.NISN) document.getElementById('cfg-id').value = row.ID || row.NISN;
+                    if(row.Kelas) document.getElementById('cfg-kelas').value = row.Kelas;
+                    syncData();
+                    showToast("Data Excel berhasil diimpor");
                 }
-            } catch (err) { alert('Error membaca Excel:
+            } catch(err) { showToast("Gagal membaca Excel", "error"); }
+        };
+        reader.readAsArrayBuffer(input.files[0]);
+    }
+
+    function resetForm() {
+        if(isLocked) return;
+        if(confirm("Hapus semua data?")) {
+            localStorage.removeItem('psi_v5_config');
+            location.reload();
+        }
+    }
+
+    function exportJSON() {
+        const data = localStorage.getItem('psi_v5_config');
+        const blob = new Blob([data], {type: 'application/json'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `Backup_Laporan_Terkunci.json`;
+        a.click();
+    }
+
+    window.onload = init;
+</script>
+
+</body>
+</html>
